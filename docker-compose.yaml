@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:13.0-alpine
+    volumes:
+      - /var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+  backend:
+    build: .
+    ports: 
+      - "8000:8000"
+    restart: always
+    volumes:
+      - static_value:/app/static/
+      - media_value:/app/media/
+    depends_on:
+      - db
+    env_file:
+      - .env
+  redis:
+    image: redis
+    restart: always
+  worker:
+    restart: always
+    build: .
+    volumes: 
+      - static_value:/app/static/
+      - media_value:/app/media/
+    command: ['celery', '--workdir=./src', '-A', 'proj', 'worker' ]
+    depends_on:
+      - redis
+      - db
+    env_file:
+      - .env
+
+volumes:
+  static_value:
+  media_value:
